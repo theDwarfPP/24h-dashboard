@@ -6,12 +6,6 @@ import { useAppContext } from '../context/AppContext';
 
 import advertiserAData from '../data/advertiserA.json';
 
-// Helper to convert Excel date number to string 'YYYY-MM-DD'
-const excelDateToJSDate = (excelDate: number) => {
-  const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
-  return date.toISOString().split('T')[0];
-};
-
 export const TrendChart = () => {
   const [searchParams] = useSearchParams();
   const { advertiser, selectedMetrics, customData, defaultDateRange } = useAppContext();
@@ -119,9 +113,11 @@ export const TrendChart = () => {
         data.push({
           time: hourStr,
           roi_24h: i === 0 ? 0 : (Math.random() * 0.5 + 0.2), // Keep it low to match image-7
-          roi_24h_reflowing: null,
-          roi_est_24h: null,
-          roi_net: null,
+          roi_24h_reflowing: null as number | null,
+          roi_est_24h: null as number | null,
+          roi_net: null as number | null,
+          _isReflowCompleted: true,
+          _raw_roi: 0
         });
       }
     } else {
@@ -136,7 +132,9 @@ export const TrendChart = () => {
           roi_24h: advertiser === 'advertiser_b' ? 0.8 + Math.random() * 0.5 : 1.5 + Math.random(),
           roi_24h_reflowing: Math.random() > 0.5 ? (advertiser === 'advertiser_b' ? 1.0 + Math.random() * 0.5 : 2.0 + Math.random()) : null,
           roi_est_24h: Math.random() > 0.5 ? (advertiser === 'advertiser_b' ? 0.9 + Math.random() * 0.5 : 1.8 + Math.random()) : null,
-          roi_net: advertiser === 'advertiser_b' ? 1.2 + Math.random() * 0.5 : 2.5 + Math.random()
+          roi_net: advertiser === 'advertiser_b' ? 1.2 + Math.random() * 0.5 : 2.5 + Math.random(),
+          _isReflowCompleted: true,
+          _raw_roi: 0
         });
         current.setDate(current.getDate() + 1);
       }
@@ -267,14 +265,16 @@ export const TrendChart = () => {
                 tickFormatter={(val) => val.toFixed(2)}
               />
               <Tooltip 
-                formatter={(value: number, name: string) => {
+                formatter={(value: any, name: any) => {
+                  const nameStr = String(name || '');
                   const nameMap: Record<string, string> = {
                     'roi_24h': '综合ROI (24小时)',
                     'roi_est_24h': '预估综合ROI (24小时)',
                     'roi_24h_reflowing': '综合ROI (24小时) - 回流中',
                     'roi_net': '综合ROI (净成交)'
                   };
-                  return [value.toFixed(2), nameMap[name] || name];
+                  const valNum = typeof value === 'number' ? value : parseFloat(String(value));
+                  return [valNum.toFixed(2), nameMap[nameStr] || nameStr];
                 }}
               />
               {hasData.roi_24h && <Line type="monotone" dataKey="roi_24h" stroke="#06b6d4" strokeWidth={2} dot={false} connectNulls={true} />}

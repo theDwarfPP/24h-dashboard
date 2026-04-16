@@ -5,7 +5,7 @@ import * as XLSX from 'xlsx';
 import { useRef, useState } from 'react';
 
 export const DebugModal = () => {
-  const { isDebugModalOpen, setIsDebugModalOpen, advertiser, setAdvertiser, setCustomData, customData } = useAppContext();
+  const { isDebugModalOpen, setIsDebugModalOpen, advertiser, setAdvertiser, setCustomData } = useAppContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string>('');
 

@@ -4,12 +4,6 @@ import { useSearchParams } from 'react-router-dom';
 import advertiserAData from '../data/advertiserA.json';
 import { useAppContext } from '../context/AppContext';
 
-// Helper to convert Excel date number to string 'YYYY-MM-DD'
-const excelDateToJSDate = (excelDate: number) => {
-  const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
-  return date.toISOString().split('T')[0];
-};
-
 const quickOptions = [
   '今天', '昨天', '最近3天', '最近7天', '最近15天', '最近30天', '上周', '本月'
 ];
