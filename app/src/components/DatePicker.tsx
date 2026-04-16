@@ -9,7 +9,7 @@ const quickOptions = [
 ];
 
 export const DatePicker = () => {
-  const { advertiser, customData, defaultDateRange } = useAppContext();
+  const { advertiser, customData, defaultDateRange, dataSource } = useAppContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlStartDate = searchParams.get('startDate') || defaultDateRange.start;
   const urlEndDate = searchParams.get('endDate') || defaultDateRange.end;
@@ -110,14 +110,15 @@ export const DatePicker = () => {
 
   // Get date status from Excel data
   const dateStatusMap = useMemo(() => {
-    if (advertiser !== 'advertiser_a' && advertiser !== 'custom') return {};
-    
     const map: Record<string, boolean> = {};
     const groupedByDay: Record<string, any[]> = {};
 
-    const sourceData = advertiser === 'custom' ? customData : advertiserAData;
+    const sourceData = dataSource === 'custom' ? customData : advertiserAData;
+    
+    // Filter by current advertiser
+    const filteredData = sourceData.filter((item: any) => item.name === advertiser);
 
-    sourceData.forEach((item: any) => {
+    filteredData.forEach((item: any) => {
       const dateStr = item.date;
       if (!groupedByDay[dateStr]) groupedByDay[dateStr] = [];
       groupedByDay[dateStr].push(item);
@@ -132,7 +133,7 @@ export const DatePicker = () => {
     });
 
     return map;
-  }, [advertiser, customData]);
+  }, [advertiser, customData, dataSource]);
 
   const renderCalendar = (year: number, month: number, isLeft: boolean) => {
     const d = new Date(year, month - 1, 1);

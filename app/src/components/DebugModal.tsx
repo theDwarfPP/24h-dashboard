@@ -5,18 +5,14 @@ import * as XLSX from 'xlsx';
 import { useRef, useState } from 'react';
 
 export const DebugModal = () => {
-  const { isDebugModalOpen, setIsDebugModalOpen, advertiser, setAdvertiser, setCustomData } = useAppContext();
+  const { isDebugModalOpen, setIsDebugModalOpen, advertiser, setAdvertiser, dataSource, setDataSource, setCustomData, customData } = useAppContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string>('');
 
   if (!isDebugModalOpen) return null;
   
-  const advName = advertiserAData[0]?.name || 'Ufeel家居旗舰店';
-
-  const excelDateToJSDate = (excelDate: number) => {
-    const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
-    return date;
-  };
+  const builtinAdvertisers = Array.from(new Set(advertiserAData.map(d => d.name).filter(Boolean)));
+  const customAdvertisers = Array.from(new Set(customData.map(d => d.name).filter(Boolean)));
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -36,7 +32,8 @@ export const DebugModal = () => {
         const parsedData = data.map((row: any) => {
           let dateStr = row['日期'];
           if (typeof dateStr === 'number') {
-            dateStr = excelDateToJSDate(dateStr).toISOString().split('T')[0];
+            const date = new Date(Math.round((dateStr - 25569) * 86400 * 1000));
+            dateStr = date.toISOString().split('T')[0];
           }
 
           let hourStr = String(row['hour'] || '0').padStart(2, '0');
@@ -58,7 +55,12 @@ export const DebugModal = () => {
         });
 
         setCustomData(parsedData);
-        setAdvertiser('custom');
+        
+        const uploadedNames = Array.from(new Set(parsedData.map((d: any) => d.name).filter(Boolean)));
+        if (uploadedNames.length > 0) {
+          setDataSource('custom');
+          setAdvertiser(uploadedNames[0] as string);
+        }
       } catch (error) {
         console.error('Error parsing Excel file:', error);
         alert('解析 Excel 文件失败，请检查格式');
@@ -86,41 +88,22 @@ export const DebugModal = () => {
               选择广告主预设数据
             </label>
             <div className="space-y-3">
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input 
-                  type="radio" 
-                  name="advertiser" 
-                  value="default"
-                  checked={advertiser === 'default'}
-                  onChange={(e) => setAdvertiser(e.target.value as any)}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                />
-                <span className="text-sm text-gray-900">默认（当前页面数据）</span>
-              </label>
-              
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input 
-                  type="radio" 
-                  name="advertiser" 
-                  value="advertiser_a"
-                  checked={advertiser === 'advertiser_a'}
-                  onChange={(e) => setAdvertiser(e.target.value as any)}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                />
-                <span className="text-sm text-gray-900">{advName}</span>
-              </label>
-
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input 
-                  type="radio" 
-                  name="advertiser" 
-                  value="advertiser_b"
-                  checked={advertiser === 'advertiser_b'}
-                  onChange={(e) => setAdvertiser(e.target.value as any)}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                />
-                <span className="text-sm text-gray-900">广告主 B（服饰类目）</span>
-              </label>
+              {builtinAdvertisers.map(name => (
+                <label key={name as string} className="flex items-center space-x-3 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="advertiser" 
+                    value={name as string}
+                    checked={dataSource === 'builtin' && advertiser === name}
+                    onChange={() => {
+                      setDataSource('builtin');
+                      setAdvertiser(name as string);
+                    }}
+                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <span className="text-sm text-gray-900">{name as string}</span>
+                </label>
+              ))}
 
               <div className="pt-2">
                 <label className="flex items-center space-x-3 cursor-pointer group">
@@ -128,19 +111,38 @@ export const DebugModal = () => {
                     type="radio" 
                     name="advertiser" 
                     value="custom"
-                    checked={advertiser === 'custom'}
-                    onChange={(e) => setAdvertiser(e.target.value as any)}
+                    checked={dataSource === 'custom'}
+                    onChange={() => setDataSource('custom')}
                     className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 mt-1"
                   />
                   <div className="flex-1">
                     <span className="text-sm text-gray-900 font-medium">上传自定义 Excel 数据</span>
+                    
+                    {dataSource === 'custom' && customAdvertisers.length > 0 && (
+                      <div className="mt-3 pl-2 space-y-2 border-l-2 border-blue-100">
+                        {customAdvertisers.map(name => (
+                          <label key={`custom-${name}`} className="flex items-center space-x-3 cursor-pointer">
+                            <input 
+                              type="radio" 
+                              name="customAdvertiser" 
+                              value={name as string}
+                              checked={advertiser === name}
+                              onChange={() => setAdvertiser(name as string)}
+                              className="w-4 h-4 text-blue-400 focus:ring-blue-500 border-gray-300"
+                            />
+                            <span className="text-sm text-gray-700">{name as string}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
                     <div 
-                      className={`mt-2 border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center transition-colors ${
-                        advertiser === 'custom' ? 'border-blue-400 bg-blue-50/30' : 'border-gray-300 bg-gray-50 group-hover:bg-gray-100'
+                      className={`mt-3 border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center transition-colors ${
+                        dataSource === 'custom' ? 'border-blue-400 bg-blue-50/30' : 'border-gray-300 bg-gray-50 group-hover:bg-gray-100'
                       }`}
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <Upload className={`w-5 h-5 mb-1 ${advertiser === 'custom' ? 'text-blue-500' : 'text-gray-400'}`} />
+                      <Upload className={`w-5 h-5 mb-1 ${dataSource === 'custom' ? 'text-blue-500' : 'text-gray-400'}`} />
                       <span className="text-xs text-gray-500 text-center">
                         {fileName ? (
                           <span className="text-blue-600 font-medium break-all line-clamp-1">{fileName}</span>

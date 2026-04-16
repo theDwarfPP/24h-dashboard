@@ -8,30 +8,32 @@ import advertiserAData from '../data/advertiserA.json';
 
 export const TrendChart = () => {
   const [searchParams] = useSearchParams();
-  const { advertiser, selectedMetrics, customData, defaultDateRange } = useAppContext();
+  const { advertiser, selectedMetrics, customData, defaultDateRange, dataSource } = useAppContext();
   const startDate = searchParams.get('startDate') || defaultDateRange.start;
   const endDate = searchParams.get('endDate') || defaultDateRange.end;
 
   const isSingleDay = startDate === endDate;
 
   const chartData = useMemo(() => {
-    if (advertiser === 'advertiser_a' || advertiser === 'custom') {
-      const sourceData = advertiser === 'custom' ? customData : advertiserAData;
-      let filteredData = sourceData;
+    const sourceData = dataSource === 'custom' ? customData : advertiserAData;
+    let filteredData = sourceData;
+    
+    // Filter by current advertiser first
+    filteredData = sourceData.filter((item: any) => item.name === advertiser);
+    
+    // If it's a single day, filter data for that specific day
+    if (isSingleDay) {
+      filteredData = filteredData.filter((item: any) => item.date === startDate);
+    } else {
+      // If it's multiple days, we need to aggregate data by day (calculate daily average)
+      const start = new Date(startDate);
+      const end = new Date(endDate);
       
-      // If it's a single day, filter data for that specific day
-      if (isSingleDay) {
-        filteredData = sourceData.filter((item: any) => item.date === startDate);
-      } else {
-        // If it's multiple days, we need to aggregate data by day (calculate daily average)
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        
-        // Filter by date range first
-        const inRangeData = sourceData.filter((item: any) => {
-          const itemDate = new Date(item.date);
-          return itemDate >= start && itemDate <= end;
-        });
+      // Filter by date range
+      const inRangeData = filteredData.filter((item: any) => {
+        const itemDate = new Date(item.date);
+        return itemDate >= start && itemDate <= end;
+      });
 
         // Group by day
         const groupedByDay: Record<string, any[]> = {};
@@ -102,46 +104,7 @@ export const TrendChart = () => {
       }
 
       return parsedData;
-    }
-
-    const data = [];
-    
-    if (isSingleDay) {
-      // Generate hourly data for a single day
-      for (let i = 0; i <= 23; i++) {
-        const hourStr = `${i.toString().padStart(2, '0')}:00`;
-        data.push({
-          time: hourStr,
-          roi_24h: i === 0 ? 0 : (Math.random() * 0.5 + 0.2), // Keep it low to match image-7
-          roi_24h_reflowing: null as number | null,
-          roi_est_24h: null as number | null,
-          roi_net: null as number | null,
-          _isReflowCompleted: true,
-          _raw_roi: 0
-        });
-      }
-    } else {
-      // Generate daily data for date range
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      let current = new Date(start);
-      while (current <= end) {
-        const dateStr = current.toISOString().split('T')[0];
-        data.push({
-          time: dateStr,
-          roi_24h: advertiser === 'advertiser_b' ? 0.8 + Math.random() * 0.5 : 1.5 + Math.random(),
-          roi_24h_reflowing: Math.random() > 0.5 ? (advertiser === 'advertiser_b' ? 1.0 + Math.random() * 0.5 : 2.0 + Math.random()) : null,
-          roi_est_24h: Math.random() > 0.5 ? (advertiser === 'advertiser_b' ? 0.9 + Math.random() * 0.5 : 1.8 + Math.random()) : null,
-          roi_net: advertiser === 'advertiser_b' ? 1.2 + Math.random() * 0.5 : 2.5 + Math.random(),
-          _isReflowCompleted: true,
-          _raw_roi: 0
-        });
-        current.setDate(current.getDate() + 1);
-      }
-    }
-    
-    return data;
-  }, [startDate, endDate, isSingleDay, advertiser, customData]);
+  }, [startDate, endDate, isSingleDay, advertiser, customData, dataSource]);
 
   const hasData = useMemo(() => {
     return {

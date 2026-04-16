@@ -1,8 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 
-type AdvertiserType = 'default' | 'advertiser_a' | 'advertiser_b' | 'custom';
-
 export interface MetricsState {
   realSettlement: number;
   estTotalAmount: number;
@@ -12,40 +10,11 @@ export interface MetricsState {
   allReflowed?: boolean; // 选定周期内数据是否已全部回流
 }
 
-const defaultMetrics: Record<AdvertiserType, MetricsState> = {
-  default: {
-    realSettlement: 3300.99,
-    estTotalAmount: 3300.99,
-    estRefund: 300.98,
-    cost: 1162.79,
-    estROI: 2.58
-  },
-  advertiser_a: {
-    realSettlement: 18300.99,
-    estTotalAmount: 18300.99,
-    estRefund: 1300.98,
-    cost: 3162.79,
-    estROI: 4.50
-  },
-  advertiser_b: {
-    realSettlement: 1300.99,
-    estTotalAmount: 1300.99,
-    estRefund: 300.98,
-    cost: 862.79,
-    estROI: 1.98
-  },
-  custom: {
-    realSettlement: 0,
-    estTotalAmount: 0,
-    estRefund: 0,
-    cost: 0,
-    estROI: 0
-  }
-};
-
 interface AppContextType {
-  advertiser: AdvertiserType;
-  setAdvertiser: (adv: AdvertiserType) => void;
+  dataSource: 'builtin' | 'custom';
+  setDataSource: (source: 'builtin' | 'custom') => void;
+  advertiser: string;
+  setAdvertiser: (adv: string) => void;
   isDebugModalOpen: boolean;
   setIsDebugModalOpen: (isOpen: boolean) => void;
   metrics: MetricsState;
@@ -58,12 +27,21 @@ interface AppContextType {
   setDefaultDateRange: (range: {start: string, end: string}) => void;
 }
 
+import advertiserAData from '../data/advertiserA.json';
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [advertiser, setAdvertiser] = useState<AdvertiserType>('advertiser_a');
+  const [dataSource, setDataSource] = useState<'builtin' | 'custom'>('builtin');
+  const [advertiser, setAdvertiser] = useState<string>(advertiserAData[0]?.name || 'Ufeel家居旗舰店');
   const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
-  const [metrics, setMetrics] = useState<MetricsState>(defaultMetrics['advertiser_a']);
+  const [metrics, setMetrics] = useState<MetricsState>({
+    realSettlement: 0,
+    estTotalAmount: 0,
+    estRefund: 0,
+    cost: 0,
+    estROI: 0
+  });
   const [customData, setCustomData] = useState<any[]>([]);
   const [defaultDateRange, setDefaultDateRange] = useState<{start: string, end: string}>({
     start: '2026-04-01',
@@ -76,11 +54,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     '综合 ROI (净成交)'
   ]);
 
-  const handleSetAdvertiser = (adv: AdvertiserType) => {
-    setAdvertiser(adv);
-    setMetrics(defaultMetrics[adv]);
-  };
-
   const toggleMetricSelection = (metricTitle: string) => {
     setSelectedMetrics(prev => 
       prev.includes(metricTitle) 
@@ -91,8 +64,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AppContext.Provider value={{ 
+      dataSource,
+      setDataSource,
       advertiser, 
-      setAdvertiser: handleSetAdvertiser, 
+      setAdvertiser, 
       isDebugModalOpen, 
       setIsDebugModalOpen,
       metrics,

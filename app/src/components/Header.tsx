@@ -10,12 +10,10 @@ export const Header = () => {
   const { advertiser, setIsDebugModalOpen } = useAppContext();
 
   const getPageTitle = () => {
-    if (advertiser === 'advertiser_a') {
-      const advName = advertiserAData[0]?.name || '未知广告主';
-      return `${advName}-24小时结算产品调研`;
+    if (advertiser === 'default') {
+      return '双十一大促口红003色号-出价13测试';
     }
-    if (advertiser === 'advertiser_b') return '广告主B-24小时结算产品调研';
-    return '双十一大促口红003色号-出价13测试';
+    return `${advertiser}-24小时结算产品调研`;
   };
 
   useEffect(() => {

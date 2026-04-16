@@ -28,7 +28,7 @@ const advBData = [
 ];
 
 export const DataGrid = () => {
-  const { advertiser, selectedMetrics, toggleMetricSelection, customData, defaultDateRange } = useAppContext();
+  const { advertiser, selectedMetrics, toggleMetricSelection, customData, defaultDateRange, dataSource } = useAppContext();
   const [searchParams] = useSearchParams();
   
   const startDate = searchParams.get('startDate') || defaultDateRange.start;
@@ -37,17 +37,16 @@ export const DataGrid = () => {
   const formatNumber = (num: number, digits = 2) => num.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 
   const data = useMemo(() => {
-    if (advertiser === 'advertiser_a' || advertiser === 'custom') {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
-      const sourceData = advertiser === 'custom' ? customData : advertiserAData;
-      
-      // Filter data by selected date range
-      const inRangeData = sourceData.filter((item: any) => {
-        const itemDate = new Date(item.date);
-        return itemDate >= start && itemDate <= end;
-      });
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    const sourceData = dataSource === 'custom' ? customData : advertiserAData;
+    
+    // Filter data by selected date range and advertiser
+    const inRangeData = sourceData.filter((item: any) => {
+      const itemDate = new Date(item.date);
+      return itemDate >= start && itemDate <= end && item.name === advertiser;
+    });
 
       // Sum up monetary fields
       const sumTotalAmount = inRangeData.reduce((sum, item) => sum + (item.totalAmount || 0), 0);
@@ -97,10 +96,7 @@ export const DataGrid = () => {
         { title: '24小时内退款率', value: formatNumber(refundRate) + '%', change: '-19.65%', selectedBg: 'bg-gray-50' },
         { title: '整体成交金额(元)', value: formatNumber(sumTotalAmount), change: '+49.65%', selectedBg: 'bg-gray-50' },
       ];
-    }
-    
-    return advertiser === 'advertiser_b' ? advBData : baseData;
-  }, [advertiser, startDate, endDate, customData]);
+  }, [advertiser, startDate, endDate, customData, dataSource]);
 
   return (
     <div className="px-6 py-5">

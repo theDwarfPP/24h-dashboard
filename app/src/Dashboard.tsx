@@ -10,7 +10,7 @@ import { useAppContext } from './context/AppContext';
 import advertiserAData from './data/advertiserA.json';
 
 export const Dashboard = () => {
-  const { advertiser, setMetrics, customData, defaultDateRange } = useAppContext();
+  const { advertiser, setMetrics, customData, defaultDateRange, dataSource } = useAppContext();
   const [searchParams, setSearchParams] = useSearchParams();
   
   const startDate = searchParams.get('startDate') || defaultDateRange.start;
@@ -18,16 +18,15 @@ export const Dashboard = () => {
 
   // Synchronize Context metrics with URL date range and JSON data
   useEffect(() => {
-    if (advertiser === 'advertiser_a' || advertiser === 'custom') {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
-      const sourceData = advertiser === 'custom' ? customData : advertiserAData;
-      
-      const inRangeData = sourceData.filter((item: any) => {
-        const itemDate = new Date(item.date);
-        return itemDate >= start && itemDate <= end;
-      });
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    const sourceData = dataSource === 'custom' ? customData : advertiserAData;
+    
+    const inRangeData = sourceData.filter((item: any) => {
+      const itemDate = new Date(item.date);
+      return itemDate >= start && itemDate <= end && item.name === advertiser;
+    });
 
       const sumTotalAmount = inRangeData.reduce((sum, item) => sum + (item.totalAmount || 0), 0);
       const sumSettlement24h = inRangeData.reduce((sum, item) => sum + (item.settlement24h || 0), 0);
@@ -65,8 +64,7 @@ export const Dashboard = () => {
         estROI: avgRoiEst24h,
         allReflowed: allReflowed
       });
-    }
-  }, [advertiser, startDate, endDate, setMetrics, customData]);
+  }, [advertiser, startDate, endDate, setMetrics, customData, dataSource]);
 
   return (
     <div className="min-h-screen bg-[#f0f5ff] font-sans pb-8">
