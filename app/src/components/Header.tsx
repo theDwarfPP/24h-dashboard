@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { MoreVertical } from 'lucide-react';
 
 import { useAppContext } from '../context/AppContext';
-import advertiserAData from '../data/advertiserA.json';
 
 export const Header = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

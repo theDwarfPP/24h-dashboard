@@ -5,28 +5,6 @@ import { EditableValue } from './EditableValue';
 import advertiserAData from '../data/advertiserA.json';
 import { useSearchParams } from 'react-router-dom';
 
-const baseData = [
-  { title: '综合ROI (24小时)', value: '3.99', change: '+1.65%', tag: '数据回流中', tagColor: 'gray', selectedBg: 'bg-cyan-50/50' },
-  { title: '预估综合ROI (24小时)', value: '2.58', change: '+1.38%', tag: '推荐关注', tagColor: 'blue', selectedBg: 'bg-blue-50/50' },
-  { title: '24小时结算金额(元)', value: '3,200.01', change: '+69.65%', selectedBg: 'bg-gray-50' },
-  { title: '净成交金额', value: '3,300.99', change: '+69.65%', selectedBg: 'bg-gray-50' },
-  { title: '综合 ROI (净成交)', value: '13,118.90', change: '+69.65%', selectedBg: 'bg-purple-50/50' },
-  { title: '综合成本(元)', value: '1,162.79', change: '+1.38%', selectedBg: 'bg-gray-50' },
-  { title: '24小时内退款率', value: '30.12%', change: '+69.65%', selectedBg: 'bg-gray-50' },
-  { title: '整体成交金额(元)', value: '7,710.00', change: '+69.65%', selectedBg: 'bg-gray-50' },
-];
-
-const advBData = [
-  { title: '综合ROI (24小时)', value: '2.88', change: '-1.65%', tag: '数据回流中', tagColor: 'gray', selectedBg: 'bg-cyan-50/50' },
-  { title: '预估综合ROI (24小时)', value: '1.98', change: '-3.38%', tag: '推荐关注', tagColor: 'blue', selectedBg: 'bg-blue-50/50' },
-  { title: '24小时结算金额(元)', value: '1,200.01', change: '-9.65%', selectedBg: 'bg-gray-50' },
-  { title: '净成交金额', value: '1,300.99', change: '-19.65%', selectedBg: 'bg-gray-50' },
-  { title: '综合 ROI (净成交)', value: '23,118.90', change: '+19.65%', selectedBg: 'bg-purple-50/50' },
-  { title: '综合成本(元)', value: '862.79', change: '-5.38%', selectedBg: 'bg-gray-50' },
-  { title: '24小时内退款率', value: '45.12%', change: '+15.65%', selectedBg: 'bg-gray-50' },
-  { title: '整体成交金额(元)', value: '3,710.00', change: '-29.65%', selectedBg: 'bg-gray-50' },
-];
-
 export const DataGrid = () => {
   const { advertiser, selectedMetrics, toggleMetricSelection, customData, defaultDateRange, dataSource } = useAppContext();
   const [searchParams] = useSearchParams();
