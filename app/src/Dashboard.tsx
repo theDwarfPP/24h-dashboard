@@ -24,8 +24,21 @@ export const Dashboard = () => {
     const sourceData = dataSource === 'custom' ? customData : advertiserAData;
     
     const inRangeData = sourceData.filter((item: any) => {
+      if (!item.date) return false;
       const itemDate = new Date(item.date);
       return itemDate >= start && itemDate <= end && item.name === advertiser;
+    });
+
+    // Debug: log filtering results
+    console.log('=== Dashboard Filter Debug ===', {
+      dataSource,
+      advertiser,
+      startDate,
+      endDate,
+      sourceDataLength: sourceData.length,
+      inRangeDataLength: inRangeData.length,
+      firstItem: sourceData[0],
+      firstInRange: inRangeData[0]
     });
 
       const sumTotalAmount = inRangeData.reduce((sum, item) => sum + (item.totalAmount || 0), 0);

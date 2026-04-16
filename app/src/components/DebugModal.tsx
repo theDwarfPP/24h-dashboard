@@ -3,11 +3,13 @@ import { useAppContext } from '../context/AppContext';
 import advertiserAData from '../data/advertiserA.json';
 import * as XLSX from 'xlsx';
 import { useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 export const DebugModal = () => {
   const { isDebugModalOpen, setIsDebugModalOpen, advertiser, setAdvertiser, dataSource, setDataSource, setCustomData, customData } = useAppContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string>('');
+  const [searchParams, setSearchParams] = useSearchParams();
 
   if (!isDebugModalOpen) return null;
   
@@ -29,14 +31,33 @@ export const DebugModal = () => {
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws);
 
-        const parsedData = data.map((row: any) => {
-          let dateStr = row['日期'];
-          if (typeof dateStr === 'number') {
-            const date = new Date(Math.round((dateStr - 25569) * 86400 * 1000));
-            dateStr = date.toISOString().split('T')[0];
-          }
+        // Debug: log the first row's keys to identify column names
+        if (data.length > 0) {
+          console.log('=== Excel Column Keys ===', Object.keys(data[0] as object));
+          console.log('=== First Row Sample ===', data[0]);
+        }
 
-          let hourStr = String(row['hour'] || '0').padStart(2, '0');
+        const parsedData = data.map((row: any) => {
+          // Extract date from 'hour' field (format: '2026-04-01 00') or '日期' field
+          let dateStr = '';
+          let hourStr = '00';
+          
+          const hourVal = row['hour'];
+          if (hourVal && typeof hourVal === 'string' && hourVal.includes(' ')) {
+            const parts = hourVal.split(' ');
+            dateStr = parts[0];
+            hourStr = parts[1] ? parts[1].padStart(2, '0') : '00';
+          } else if (hourVal && typeof hourVal === 'number') {
+            dateStr = String(hourVal).substring(0, 10);
+            hourStr = String(hourVal).substring(11, 13).padStart(2, '0') || '00';
+          } else {
+            dateStr = row['日期'];
+            if (typeof dateStr === 'number') {
+              const date = new Date(Math.round((dateStr - 25569) * 86400 * 1000));
+              dateStr = date.toISOString().split('T')[0];
+            }
+            hourStr = String(row['hour'] || '0').padStart(2, '0');
+          }
 
           return {
             name: row['name'] || file.name.replace('.xlsx', ''),
@@ -44,9 +65,9 @@ export const DebugModal = () => {
             hour: hourStr,
             isReflowed: row['是否回流完'],
             isReflowCompleted: row['是否回流完'] === '是',
-            roiNet: parseFloat(row['综合 ROI（净成交）']) || 0,
-            roi24h: parseFloat(row['24小时综合ROI']) || 0,
-            roiEst24h: parseFloat(row['预估24小时综合ROI']) || 0,
+            roiNet: parseFloat(row['综合ROI（净成交）']) || parseFloat(row['综合 ROI（净成交）']) || parseFloat(row['综合 ROI (净成交)']) || 0,
+            roi24h: parseFloat(row['24小时综合ROI']) || parseFloat(row['24小时综合 ROI']) || 0,
+            roiEst24h: parseFloat(row['预估24小时综合ROI']) || parseFloat(row['预估综合ROI (24小时)']) || 0,
             totalAmount: parseFloat(row['整体成交金额']) || 0,
             settlement24h: parseFloat(row['24小时结算金额']) || 0,
             netAmount: parseFloat(row['净成交金额']) || 0,
@@ -56,10 +77,30 @@ export const DebugModal = () => {
 
         setCustomData(parsedData);
         
+        // Debug: log parsed data sample
+        if (parsedData.length > 0) {
+          console.log('=== Parsed Data Sample ===', parsedData[0]);
+          console.log('=== Parsed Data Total Rows ===', parsedData.length);
+        }
+        
         const uploadedNames = Array.from(new Set(parsedData.map((d: any) => d.name).filter(Boolean)));
         if (uploadedNames.length > 0) {
+          const defaultAdv = uploadedNames[0] as string;
           setDataSource('custom');
-          setAdvertiser(uploadedNames[0] as string);
+          setAdvertiser(defaultAdv);
+          
+          // Auto select the latest date range for the new advertiser
+          const advData = parsedData.filter((d: any) => d.name === defaultAdv);
+          if (advData.length > 0) {
+            const dates = Array.from(new Set(advData.map((d: any) => d.date).filter(Boolean))).sort();
+            if (dates.length > 0) {
+              const latestDate = dates[dates.length - 1];
+              const newParams = new URLSearchParams(searchParams);
+              newParams.set('startDate', latestDate as string);
+              newParams.set('endDate', latestDate as string);
+              setSearchParams(newParams);
+            }
+          }
         }
       } catch (error) {
         console.error('Error parsing Excel file:', error);
@@ -67,6 +108,25 @@ export const DebugModal = () => {
       }
     };
     reader.readAsBinaryString(file);
+  };
+
+  const handleAdvertiserChange = (source: 'builtin' | 'custom', name: string) => {
+    setDataSource(source);
+    setAdvertiser(name);
+
+    // Auto select the latest date range for the new advertiser
+    const dataList = source === 'builtin' ? advertiserAData : customData;
+    const advData = dataList.filter((d: any) => d.name === name);
+    if (advData.length > 0) {
+      const dates = Array.from(new Set(advData.map((d: any) => d.date).filter(Boolean))).sort();
+      if (dates.length > 0) {
+        const latestDate = dates[dates.length - 1];
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('startDate', latestDate as string);
+        newParams.set('endDate', latestDate as string);
+        setSearchParams(newParams);
+      }
+    }
   };
 
   return (
@@ -95,10 +155,7 @@ export const DebugModal = () => {
                     name="advertiser" 
                     value={name as string}
                     checked={dataSource === 'builtin' && advertiser === name}
-                    onChange={() => {
-                      setDataSource('builtin');
-                      setAdvertiser(name as string);
-                    }}
+                    onChange={() => handleAdvertiserChange('builtin', name as string)}
                     className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
                   <span className="text-sm text-gray-900">{name as string}</span>
@@ -127,7 +184,7 @@ export const DebugModal = () => {
                               name="customAdvertiser" 
                               value={name as string}
                               checked={advertiser === name}
-                              onChange={() => setAdvertiser(name as string)}
+                              onChange={() => handleAdvertiserChange('custom', name as string)}
                               className="w-4 h-4 text-blue-400 focus:ring-blue-500 border-gray-300"
                             />
                             <span className="text-sm text-gray-700">{name as string}</span>

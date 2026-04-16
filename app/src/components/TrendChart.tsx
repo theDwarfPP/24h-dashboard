@@ -31,6 +31,7 @@ export const TrendChart = () => {
       
       // Filter by date range
       const inRangeData = filteredData.filter((item: any) => {
+        if (!item.date) return false;
         const itemDate = new Date(item.date);
         return itemDate >= start && itemDate <= end;
       });

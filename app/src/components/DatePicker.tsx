@@ -119,6 +119,7 @@ export const DatePicker = () => {
     const filteredData = sourceData.filter((item: any) => item.name === advertiser);
 
     filteredData.forEach((item: any) => {
+      if (!item.date) return;
       const dateStr = item.date;
       if (!groupedByDay[dateStr]) groupedByDay[dateStr] = [];
       groupedByDay[dateStr].push(item);

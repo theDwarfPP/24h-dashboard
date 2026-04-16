@@ -22,6 +22,7 @@ export const DataGrid = () => {
     
     // Filter data by selected date range and advertiser
     const inRangeData = sourceData.filter((item: any) => {
+      if (!item.date) return false;
       const itemDate = new Date(item.date);
       return itemDate >= start && itemDate <= end && item.name === advertiser;
     });
